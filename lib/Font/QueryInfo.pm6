@@ -1,9 +1,11 @@
 #!/usr/bin/env perl6
 =begin pod
 =head1 NAME
+
 Font::QueryInfo — Queries information about fonts, including name,
 style, family, foundry, and the character set the font covers.
 =head1 DESCRIPTION
+
 Easy to use routines query information about the font and return it in a hash.
 The keys are the names of the properties and the values are the property values.
 

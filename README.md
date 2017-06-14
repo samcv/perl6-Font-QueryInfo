@@ -1,8 +1,14 @@
-NAME Font::QueryInfo — Queries information about fonts, including name, style, family, foundry, and the character set the font covers.
-======================================================================================================================================
+[![Build Status](https://travis-ci.org/samcv/perl6-Font-QueryInfo.svg?branch=master)](https://travis-ci.org/samcv/perl6-Font-QueryInfo)
 
-DESCRIPTION Easy to use routines query information about the font and return it in a hash. The keys are the names of the properties and the values are the property values.
-===========================================================================================================================================================================
+NAME
+====
+
+Font::QueryInfo — Queries information about fonts, including name, style, family, foundry, and the character set the font covers.
+
+DESCRIPTION
+===========
+
+Easy to use routines query information about the font and return it in a hash. The keys are the names of the properties and the values are the property values.
 
 These are the properties that are available:
 
