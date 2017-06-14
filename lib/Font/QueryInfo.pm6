@@ -1,10 +1,11 @@
 #!/usr/bin/env perl6
 =begin pod
-=NAME Font::QueryInfo — Queries information about fonts, including name,
+=head1 NAME
+Font::QueryInfo — Queries information about fonts, including name,
 style, family, foundry, and the character set the font covers.
-=DESCRIPTION Easy to use routine's font-query and font-query-all are available
-which query information about the font and return it in a hash. The keys are
-the names of the properties and the values are the property values.
+=head1 DESCRIPTION
+Easy to use routines query information about the font and return it in a hash.
+The keys are the names of the properties and the values are the property values.
 
 These are the properties that are available:
 =begin code
@@ -51,6 +52,16 @@ prgname         String  String  Name of the running program
 Strings return Str, Bool returns Bool's, Int returns Int's, Double's listed
 above return Rat's. CharSet returns a list of Range objects. The rest all
 return Str.
+
+=head1 AUTHOR
+
+Samantha McVey <samantham@posteo.net>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2017 Samantha McVey
+
+This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 =end pod
 state (%data, @fields);
 if !%data or !@fields {
