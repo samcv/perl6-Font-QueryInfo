@@ -40,27 +40,11 @@ my $data = Q:to/🌟/;
   prgname         String  String  Name of the running program
   🌟
 my @rows = $data.lines».split(/\s+/, 3);
-my @fields2     = @rows»[0];
-my @type        = @rows»[1];
-my @description = @rows»[2];
 my %data;
 for ^@rows {
     %data{@rows[$_][0]} = %( 'type' => @rows[$_][1], 'description' => @rows[$_][2] );
 }
 my @fields = %data.keys;
-my @formats = @fields.map({'%{' ~ $_ ~ '}'});
-#my $format = Q<FullName: '%{fullname}' Foundry: '%{foundry}' Family: '%{family}' Style: '%{style}'>;
-my $file = dir[0];
-for @formats -> $format {
-    last;
-    say $format;
-    my $cmd = run 'fc-scan', '--format', $format, $file, :out, :err;
-    my $out = $cmd.out.slurp(:close);
-    my $err = $cmd.err.slurp(:close);
-    die $err if $cmd.exitcode != 0 or $err;
-    $out.perl.say;
-}
-say font-query($_, @fields) for dir.grep(/:i otf|ttf $ /);
 #| Queries all of the font's properties. If supplied properties it will query all properties except for the ones
 #| given.
 multi sub font-query-all (IO::Path:D $file, *@except, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
@@ -135,4 +119,7 @@ sub make-data (Str:D $property, Str $value, Bool:D :$supress-errors = False) {
         }
     }
     Nil;
+}
+sub test-it {
+    say font-query-all($_) for dir.grep(/:i otf|ttf $ /);
 }
