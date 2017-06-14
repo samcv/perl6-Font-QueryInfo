@@ -67,7 +67,7 @@ This library is free software; you can redistribute it and/or modify it under th
 =end pod
 state (%data, @fields);
 if !%data or !@fields {
-    my @rows = $=pod[0].contents[3].contents.join.lines».split(/\s+/, 3);
+    my @rows = $=pod[0].contents[5].contents.join.lines».split(/\s+/, 3);
     for ^@rows {
         %data{@rows[$_][0]} = %( 'type' => @rows[$_][1], 'description' => @rows[$_][2] );
     }
