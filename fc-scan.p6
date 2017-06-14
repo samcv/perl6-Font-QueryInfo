@@ -74,23 +74,19 @@ multi sub font-query-all (Str:D $file, *@except, Bool:D :$supress-errors = False
 #| die or warn (totally silent). Use :no-fatal to warn instead of dying.
 #| Accepts an IO::Path object.
 multi sub font-query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
+    my $error-routine = $no-fatal ?? &warn !! &die;
     my @wrong-fields = @list.grep({@fields.any ne $_});
-    die "Didn't get any queries" if !@list;
-    die "These are not correct queries: {@wrong-fields.join(' ')}" if @wrong-fields;
+    $error-routine("Didn't get any queries") if !@list;
+    $error-routine("These are not correct queries: {@wrong-fields.join(' ')}") if @wrong-fields;
     my $cmd = run 'fc-scan', '--format', @list.map({'%{' ~ $_ ~ '}'}).join('␤'), $file.absolute, :out, :err;
     my $out = $cmd.out.slurp(:close);
     my $err = $cmd.err.slurp(:close);
     if !$supress-errors and ($cmd.exitcode != 0 or $err) {
-        if $no-fatal {
-            warn "fc-scan error:\n$err";
-        }
-        else {
-            die "fc-scan error:\n$err";
-        }
+        $error-routine("fc-scan error:\n$err");
     }
     my @results = $out.split('␤');
     my %hash;
-    die if @results != @list;
+    $error-routine("Malformed response. Got wrong number of elements back.") if @results != @list;
     for ^@results -> $elem {
         my $property = @list[$elem];
         %hash{@list[$elem]} = make-data $property, @results[$elem];
@@ -101,12 +97,13 @@ multi sub font-query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False,
 multi sub font-query (Str:D      $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
     font-query($file.IO, @list, :$supress-errors, :$no-fatal);
 }
-sub make-data (Str:D $property, Str $value) {
+sub make-data (Str:D $property, Str $value, Bool:D :$supress-errors = False) {
     given %data{$property}<type> {
         when 'Bool' {
             if $value {
                 $value eq 'True' ?? True !! $value eq 'False' ?? False !! do {
-                    warn "Property $property, expected True or False but got '$value' Leaving as a string";
+                    warn "Property $property, expected True or False but got '$value' Leaving as a string"
+                        unless $supress-errors;
                     return $value;
                 }
             }
