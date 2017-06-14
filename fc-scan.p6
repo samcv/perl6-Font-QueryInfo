@@ -60,12 +60,11 @@ for @formats -> $format {
     die $err if $cmd.exitcode != 0 or $err;
     $out.perl.say;
 }
-say query($_, @fields) for dir.grep(/:i otf|ttf $ /);
-#say query(dir[0], @fields);
-multi sub query (Str:D      $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) {
-    query($file.IO, @list, :$supress-errors, :$no-fatal);
-}
-multi sub query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) {
+say font-query($_, @fields) for dir.grep(/:i otf|ttf $ /);
+#| Queries the font for the specified list of properties. Use :supress-errors to hide all errors and never
+#| die or warn (totally silent). Use :no-fatal to warn instead of dying.
+#| Accepts an IO::Path object.
+multi sub font-query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
     my @wrong-fields = @list.grep({@fields.any ne $_});
     die "Didn't get any queries" if !@list;
     die "These are not correct queries: {@wrong-fields.join(' ')}" if @wrong-fields;
@@ -88,6 +87,10 @@ multi sub query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False, Bool
         %hash{@list[$elem]} = make-data $property, @results[$elem];
     }
     %hash;
+}
+#| Accepts an string of the font's path.
+multi sub font-query (Str:D      $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
+    font-query($file.IO, @list, :$supress-errors, :$no-fatal);
 }
 sub make-data (Str:D $property, Str $value) {
     given %data{$property}<type> {
@@ -125,4 +128,5 @@ sub make-data (Str:D $property, Str $value) {
             return $value ?? $value !! Str;
         }
     }
+    Nil;
 }
