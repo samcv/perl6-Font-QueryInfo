@@ -61,6 +61,15 @@ for @formats -> $format {
     $out.perl.say;
 }
 say font-query($_, @fields) for dir.grep(/:i otf|ttf $ /);
+#| Queries all of the font's properties. If supplied properties it will query all properties except for the ones
+#| given.
+multi sub font-query-all (IO::Path:D $file, *@except, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
+    @except ?? font-query($file, @fields ⊖ @except, :$supress-errors, :$no-fatal) !! font-query($file, @fields, :$supress-errors, :$no-fatal);
+}
+#| Queries all of the font's properties and accepts a Str for the filename instead of an IO::Path
+multi sub font-query-all (Str:D $file, *@except, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
+    font-query($file, @except, :$supress-errors, :$no-fatal);
+}
 #| Queries the font for the specified list of properties. Use :supress-errors to hide all errors and never
 #| die or warn (totally silent). Use :no-fatal to warn instead of dying.
 #| Accepts an IO::Path object.
