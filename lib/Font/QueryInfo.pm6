@@ -52,13 +52,14 @@ Strings return Str, Bool returns Bool's, Int returns Int's, Double's listed
 above return Rat's. CharSet returns a list of Range objects. The rest all
 return Str.
 =end pod
-my @rows = $=pod[0].contents[3].contents.join.lines».split(/\s+/, 3);
-my %data;
-for ^@rows {
-    %data{@rows[$_][0]} = %( 'type' => @rows[$_][1], 'description' => @rows[$_][2] );
+state (%data, @fields);
+if !%data or !@fields {
+    my @rows = $=pod[0].contents[3].contents.join.lines».split(/\s+/, 3);
+    for ^@rows {
+        %data{@rows[$_][0]} = %( 'type' => @rows[$_][1], 'description' => @rows[$_][2] );
+    }
+    @fields = %data.keys;
 }
-my @fields = %data.keys;
-#test-it;
 #| Queries all of the font's properties. If supplied properties it will query all properties except for the ones
 #| given.
 multi sub font-query-all (IO::Path:D $file, *@except, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
@@ -133,7 +134,4 @@ sub make-data (Str:D $property, Str $value, Bool:D :$supress-errors = False) {
         }
     }
     Nil;
-}
-sub test-it {
-    say font-query-all($_) for dir.grep(/:i otf|ttf $ /);
 }
