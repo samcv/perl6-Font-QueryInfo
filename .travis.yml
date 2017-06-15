@@ -5,6 +5,9 @@ language: perl6
 perl6:
   - latest
 install:
+  - myfont="3rdparty/NotoSans-Bold.ttf"
+  - fc-scan -f "%{capability}   %{minspace}     %{fontfeatures} %{rgba} %{scale}        %{scalable}     %{rasterizer}   %{autohint}       %{hintstyle}    %{aspect}       %{slant}        %{fontversion}  %{outline}      %{ftface}%{file}  %{prgname}      %{embolden}     %{antialias}    %{width}        %{charset}      %{index}        %{globaladvance}  %{foundry}      %{size} %{style}        %{familylang}   %{lang} %{stylelang}    %{dpi}  %{verticallayout} %{hinting}      %{lcdfilter}    %{spacing}      %{pixelsize}    %{weight}       %{fullnamelang}   %{fullname}     %{family}" "$myfont"
+  - fc-scan -f "Charset: '%{charset}'" "$myfont"
   - rakudobrew build zef
   - zef install --depsonly --/test .
 script:
