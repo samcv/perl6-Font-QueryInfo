@@ -117,7 +117,7 @@ multi sub font-query (IO::Path:D $file, *@list, Bool:D :$suppress-errors = False
         next unless %hash{$property} and %hash{$p2};
         my $a = %hash{$property};
         my $b = %hash{"{$property}lang"};
-        my %hash2 = %hash{$property}.split(',') Z=> %hash{$p2}.split(',');
+        my %hash2 =  %hash{$p2}.split(',') Z=> %hash{$property}.split(',');
         %hash{$property} = %hash2;
         %hash{$p2}:delete;
     }
