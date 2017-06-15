@@ -70,48 +70,53 @@ if !%data or !@fields {
 }
 #| Queries all of the font's properties. If supplied properties it will query all properties except for the ones
 #| given.
-multi sub font-query-all (IO::Path:D $file, *@except, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
-    @except ?? font-query($file, @fields ⊖ @except, :$supress-errors, :$no-fatal) !! font-query($file, @fields, :$supress-errors, :$no-fatal);
+multi sub font-query-all (IO::Path:D $file, *@except, Bool:D :$suppress-errors = False, Bool:D :$no-fatal = False) is export {
+    @except ?? font-query($file, @fields ⊖ @except, :$suppress-errors, :$no-fatal) !! font-query($file, @fields, :$suppress-errors, :$no-fatal);
 }
 #| Queries all of the font's properties and accepts a Str for the filename instead of an IO::Path
-multi sub font-query-all (Str:D $file, *@except, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
-    font-query($file, @except, :$supress-errors, :$no-fatal);
+multi sub font-query-all (Str:D $file, *@except, Bool:D :$suppress-errors = False, Bool:D :$no-fatal = False) is export {
+    font-query($file, @except, :$suppress-errors, :$no-fatal);
 }
 my @special-list = <family style fullname familylang stylelang fullnamelang>;
-#| Queries the font for the specified list of properties. Use :supress-errors to hide all errors and never
+sub noop { }
+sub error-routine (&err-routine, Str:D $message, IO::Path:D $path) {
+    &err-routine("$path $message");
+}
+#| Queries the font for the specified list of properties. Use :suppress-errors to hide all errors and never
 #| die or warn (totally silent). Use :no-fatal to warn instead of dying.
 #| Accepts an IO::Path object.
-multi sub font-query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
-    my $error-routine = $no-fatal ?? &warn !! &die;
+multi sub font-query (IO::Path:D $file, *@list, Bool:D :$suppress-errors = False, Bool:D :$no-fatal = False) is export {
+    my $error-routine = $suppress-errors ?? &noop !!
+                        $no-fatal        ?? &warn !! &die;
+    my $warn-routine  = $suppress-errors ?? &noop !! &warn;
     my @wrong-fields = @list.grep({@fields.any ne $_});
-    $error-routine("$file Didn't get any queries") if !@list;
-    $error-routine("$file These are not correct queries: {@wrong-fields.join(' ')}") if @wrong-fields;
-    my $cmd = run 'fc-scan', '--format', @list.map({'%{' ~ $_ ~ '}'}).join('␤'), $file.absolute, :out, :err;
+    error-routine($error-routine, "Didn't get any queries", $file) if !@list;
+    error-routine($error-routine, "These are not correct queries: {@wrong-fields.join(' ')}", $file) if @wrong-fields;
+    my $cmd = run('fc-scan', '--format', @list.map({'%{' ~ $_ ~ '}'}).join('␤'), $file.absolute, :out, :err);
     my $out = $cmd.out.slurp(:close);
     my $err = $cmd.err.slurp(:close);
-    if !$supress-errors and ($cmd.exitcode != 0 or $err) {
-        $error-routine("$file fc-scan error:\n$err");
+    if !$suppress-errors and ($cmd.exitcode != 0 or $err) {
+        error-routine($error-routine, "fc-scan error:\n$err", $file);
     }
     my @results = $out.split('␤');
     my %hash;
-    $error-routine("$file Malformed response. Got wrong number of elements back.") if @results != @list;
+    error-routine($error-routine, "Malformed response. Got wrong number of elements back.", $file) if @results != @list;
     my %special;
     for ^@results -> $elem {
         my $property = @list[$elem];
-        %hash{@list[$elem]} = make-data($property, @results[$elem], $file, :$supress-errors);
+        %hash{@list[$elem]} = make-data($property, @results[$elem], $file, $warn-routine, :$suppress-errors);
     }
     for <family style fullname> -> $property {
         my $p2 = $property ~ "lang";
         if !%hash{$property} {
-            note "$property missing";
+            error-routine($warn-routine, "$property missing", $file);
         }
         if !%hash{$p2} {
-            note "$p2 missing";
+            error-routine($warn-routine, "$p2 missing", $file);
         }
         next unless %hash{$property} and %hash{$p2};
         my $a = %hash{$property};
         my $b = %hash{"{$property}lang"};
-        #say "$property ($a) $p2 ($b)";
         my %hash2 = %hash{$property}.split(',') Z=> %hash{$p2}.split(',');
         %hash{$property} = %hash2;
         %hash{$p2}:delete;
@@ -119,16 +124,16 @@ multi sub font-query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False,
     %hash;
 }
 #| Accepts an string of the font's path.
-multi sub font-query (Str:D      $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
-    font-query($file.IO, @list, :$supress-errors, :$no-fatal);
+multi sub font-query (Str:D      $file, *@list, Bool:D :$suppress-errors = False, Bool:D :$no-fatal = False) is export {
+    font-query($file.IO, @list, :$suppress-errors, :$no-fatal);
 }
-sub make-data (Str:D $property, Str $value, IO::Path $file, Bool:D :$supress-errors = False) {
+sub make-data (Str:D $property, Str $value, IO::Path $file, $warn-routine, Bool:D :$suppress-errors = False) {
     given %data{$property}<type> {
         when 'Bool' {
             if $value {
                 $value eq 'True' ?? True !! $value eq 'False' ?? False !! do {
-                    warn "$file Property $property, expected True or False but got '$value' Leaving as a string"
-                        unless $supress-errors;
+                    error-routine($warn-routine, "Property $property, expected True or False but got '$value' Leaving as a string", $file)
+                        unless $suppress-errors;
                     return $value;
                 }
             }
