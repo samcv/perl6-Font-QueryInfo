@@ -78,7 +78,7 @@ multi sub font-query-all (Str:D $file, *@except, Bool:D :$suppress-errors = Fals
     font-query($file, @except, :$suppress-errors, :$no-fatal);
 }
 my @special-list = <family style fullname familylang stylelang fullnamelang>;
-sub noop { }
+sub noop { @_ }
 sub error-routine (&err-routine, Str:D $message, IO::Path:D $path) {
     &err-routine("$path $message");
 }
