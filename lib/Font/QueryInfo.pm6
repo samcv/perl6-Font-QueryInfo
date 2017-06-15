@@ -52,18 +52,13 @@ prgname         String  String  Name of the running program
 =end code
 
 Strings return Str, Bool returns Bool's, Int returns Int's, Double's listed
-above return Rat's. CharSet returns a list of Range objects. The rest all
-return Str.
+above return Rat's. CharSet returns a List of Range objects. The rest all
+return Str. The exception to this is lang, which returns a set of languages
+the font supports.
 
-=head1 AUTHOR
+If the property is not defined, it will return a type object of the type which
+would normally be returned.
 
-Samantha McVey <samantham@posteo.net>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright 2017 Samantha McVey
-
-This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 =end pod
 state (%data, @fields);
 if !%data or !@fields {
@@ -82,26 +77,44 @@ multi sub font-query-all (IO::Path:D $file, *@except, Bool:D :$supress-errors = 
 multi sub font-query-all (Str:D $file, *@except, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
     font-query($file, @except, :$supress-errors, :$no-fatal);
 }
+my @special-list = <family style fullname familylang stylelang fullnamelang>;
 #| Queries the font for the specified list of properties. Use :supress-errors to hide all errors and never
 #| die or warn (totally silent). Use :no-fatal to warn instead of dying.
 #| Accepts an IO::Path object.
 multi sub font-query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
     my $error-routine = $no-fatal ?? &warn !! &die;
     my @wrong-fields = @list.grep({@fields.any ne $_});
-    $error-routine("Didn't get any queries") if !@list;
-    $error-routine("These are not correct queries: {@wrong-fields.join(' ')}") if @wrong-fields;
+    $error-routine("$file Didn't get any queries") if !@list;
+    $error-routine("$file These are not correct queries: {@wrong-fields.join(' ')}") if @wrong-fields;
     my $cmd = run 'fc-scan', '--format', @list.map({'%{' ~ $_ ~ '}'}).join('␤'), $file.absolute, :out, :err;
     my $out = $cmd.out.slurp(:close);
     my $err = $cmd.err.slurp(:close);
     if !$supress-errors and ($cmd.exitcode != 0 or $err) {
-        $error-routine("fc-scan error:\n$err");
+        $error-routine("$file fc-scan error:\n$err");
     }
     my @results = $out.split('␤');
     my %hash;
-    $error-routine("Malformed response. Got wrong number of elements back.") if @results != @list;
+    $error-routine("$file Malformed response. Got wrong number of elements back.") if @results != @list;
+    my %special;
     for ^@results -> $elem {
         my $property = @list[$elem];
-        %hash{@list[$elem]} = make-data $property, @results[$elem];
+        %hash{@list[$elem]} = make-data($property, @results[$elem], $file, :$supress-errors);
+    }
+    for <family style fullname> -> $property {
+        my $p2 = $property ~ "lang";
+        if !%hash{$property} {
+            note "$property missing";
+        }
+        if !%hash{$p2} {
+            note "$p2 missing";
+        }
+        next unless %hash{$property} and %hash{$p2};
+        my $a = %hash{$property};
+        my $b = %hash{"{$property}lang"};
+        #say "$property ($a) $p2 ($b)";
+        my %hash2 = %hash{$property}.split(',') Z=> %hash{$p2}.split(',');
+        %hash{$property} = %hash2;
+        %hash{$p2}:delete;
     }
     %hash;
 }
@@ -109,12 +122,12 @@ multi sub font-query (IO::Path:D $file, *@list, Bool:D :$supress-errors = False,
 multi sub font-query (Str:D      $file, *@list, Bool:D :$supress-errors = False, Bool:D :$no-fatal = False) is export {
     font-query($file.IO, @list, :$supress-errors, :$no-fatal);
 }
-sub make-data (Str:D $property, Str $value, Bool:D :$supress-errors = False) {
+sub make-data (Str:D $property, Str $value, IO::Path $file, Bool:D :$supress-errors = False) {
     given %data{$property}<type> {
         when 'Bool' {
             if $value {
                 $value eq 'True' ?? True !! $value eq 'False' ?? False !! do {
-                    warn "Property $property, expected True or False but got '$value' Leaving as a string"
+                    warn "$file Property $property, expected True or False but got '$value' Leaving as a string"
                         unless $supress-errors;
                     return $value;
                 }
@@ -140,11 +153,29 @@ sub make-data (Str:D $property, Str $value, Bool:D :$supress-errors = False) {
             }
         }
         when 'CharSet' {
-            return $value.split(' ').map({my @t = .split('-')».parse-base(16); @t > 1 ?? Range.new(@t[0], @t[1]) !! Range.new(@t[0], @t[0]) })
+            return $value
+                ?? $value.split(' ').map({my @t = .split('-')».parse-base(16); @t > 1 ?? Range.new(@t[0], @t[1]) !! Range.new(@t[0], @t[0]) }).list
+                !! List
         }
         default {
+            if $property eq 'lang' {
+                return $value ?? $value.split('|').Set !! Set;
+            }
             return $value ?? $value !! Str;
         }
     }
     Nil;
 }
+=begin pod
+
+=head1 AUTHOR
+
+Samantha McVey <samantham@posteo.net>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2017 Samantha McVey
+
+This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
+
+=end pod
