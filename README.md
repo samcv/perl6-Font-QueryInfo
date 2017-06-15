@@ -51,19 +51,9 @@ These are the properties that are available:
     fontfeatures    String  List of the feature tags in OpenType to be enabled
     prgname         String  String  Name of the running program
 
-Strings return Str, Bool returns Bool's, Int returns Int's, Double's listed above return Rat's. CharSet returns a list of Range objects. The rest all return Str.
+Strings return Str, Bool returns Bool's, Int returns Int's, Double's listed above return Rat's. CharSet returns a List of Range objects. The rest all return Str. The exception to this is lang, which returns a set of languages the font supports.
 
-AUTHOR
-======
-
-Samantha McVey <samantham@posteo.net>
-
-COPYRIGHT AND LICENSE
-=====================
-
-Copyright 2017 Samantha McVey
-
-This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
+If the property is not defined, it will return a type object of the type which would normally be returned.
 
 ### sub font-query-all
 
@@ -71,7 +61,7 @@ This library is free software; you can redistribute it and/or modify it under th
 sub font-query-all(
     IO::Path:D $file, 
     *@except, 
-    Bool:D :$supress-errors = Bool::False, 
+    Bool:D :$suppress-errors = Bool::False, 
     Bool:D :$no-fatal = Bool::False
 ) returns Mu
 ```
@@ -84,7 +74,7 @@ Queries all of the font's properties. If supplied properties it will query all p
 sub font-query-all(
     Str:D $file, 
     *@except, 
-    Bool:D :$supress-errors = Bool::False, 
+    Bool:D :$suppress-errors = Bool::False, 
     Bool:D :$no-fatal = Bool::False
 ) returns Mu
 ```
@@ -97,12 +87,12 @@ Queries all of the font's properties and accepts a Str for the filename instead 
 sub font-query(
     IO::Path:D $file, 
     *@list, 
-    Bool:D :$supress-errors = Bool::False, 
+    Bool:D :$suppress-errors = Bool::False, 
     Bool:D :$no-fatal = Bool::False
 ) returns Mu
 ```
 
-Queries the font for the specified list of properties. Use :supress-errors to hide all errors and never die or warn (totally silent). Use :no-fatal to warn instead of dying. Accepts an IO::Path object.
+Queries the font for the specified list of properties. Use :suppress-errors to hide all errors and never die or warn (totally silent). Use :no-fatal to warn instead of dying. Accepts an IO::Path object.
 
 ### sub font-query
 
@@ -110,9 +100,21 @@ Queries the font for the specified list of properties. Use :supress-errors to hi
 sub font-query(
     Str:D $file, 
     *@list, 
-    Bool:D :$supress-errors = Bool::False, 
+    Bool:D :$suppress-errors = Bool::False, 
     Bool:D :$no-fatal = Bool::False
 ) returns Mu
 ```
 
 Accepts an string of the font's path.
+
+AUTHOR
+======
+
+Samantha McVey <samantham@posteo.net>
+
+COPYRIGHT AND LICENSE
+=====================
+
+Copyright 2017 Samantha McVey
+
+This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
