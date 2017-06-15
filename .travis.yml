@@ -9,4 +9,5 @@ install:
   - zef install --depsonly --/test .
 script:
   - PERL6LIB=$PWD/lib prove -e perl6 -vr t/
+
 sudo: false
