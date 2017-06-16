@@ -90,15 +90,16 @@ multi sub font-query (IO::Path:D $file, *@list, Bool:D :$suppress-errors = False
                         $no-fatal        ?? &warn !! &die;
     my $warn-routine  = $suppress-errors ?? &noop !! &warn;
     my @wrong-fields = @list.grep({@fields.any ne $_});
+    my $delimiter = "␤";
     error-routine($error-routine, "Didn't get any queries", $file) if !@list;
     error-routine($error-routine, "These are not correct queries: {@wrong-fields.join(' ')}", $file) if @wrong-fields;
-    my $cmd = run('fc-scan', '--format', @list.map({'%{' ~ $_ ~ '}'}).join('␤'), $file.absolute, :out, :err);
+    my $cmd = run('fc-scan', '--format', @list.map({'%{' ~ $_ ~ '}'}).join($delimiter), $file.absolute, :out, :err);
     my $out = $cmd.out.slurp(:close);
     my $err = $cmd.err.slurp(:close);
     if !$suppress-errors and ($cmd.exitcode != 0 or $err) {
         error-routine($error-routine, "fc-scan error:\n$err", $file);
     }
-    my @results = $out.split('␤');
+    my @results = $out.split($delimiter);
     my %hash;
     error-routine($error-routine, "Malformed response. Got wrong number of elements back.", $file) if @results != @list;
     my %special;
