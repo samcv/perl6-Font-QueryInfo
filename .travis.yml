@@ -1,6 +1,7 @@
 os:
   - linux
   - osx
+dist: trusty
 language: perl6
 perl6:
   - latest
