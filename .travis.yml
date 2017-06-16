@@ -4,9 +4,10 @@ os:
 language: perl6
 perl6:
   - latest
+
 install:
   - myfont="3rdparty/NotoSans-Bold.ttf"
-  - fc-scan -f "Charset: '%{charset}'" "$myfont"
+  - "fc-scan -f 'Charset: %{charset}' '$myfont'"
   - rakudobrew build zef
   - zef install --depsonly --/test .
 script:
