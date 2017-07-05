@@ -2,7 +2,9 @@
 use lib 'lib';
 use Font::QueryInfo;
 sub MAIN (Str:D $folder = '.') {
-    my @fonts = dir($folder).grep(/:i otf|ttf $ /);
-    die "Couldn't find any fonts in {$folder.IO.absolute} specify a correct one as an argument" if !@fonts;
-    say font-query-all($_) for @fonts;
+    query-folder($folder.IO);
+}
+sub query-folder (IO::Path:D $folder) {
+    say $_ => font-query-all($_) for dir($folder).grep(/:i '.' [otf|ttf] $ /);
+    dir($folder).grep(*.d)».&query-folder;
 }
