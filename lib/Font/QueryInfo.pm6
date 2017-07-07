@@ -71,7 +71,7 @@ if !%data or !@fields {
 #| Queries all of the font's properties. If supplied properties it will query all properties except for the ones
 #| given.
 multi sub font-query-all (IO::Path:D $file, *@except, Bool:D :$suppress-errors = False, Bool:D :$no-fatal = False) is export {
-    @except ?? font-query($file, @fields ⊖ @except, :$suppress-errors, :$no-fatal) !! font-query($file, @fields, :$suppress-errors, :$no-fatal);
+    @except ?? font-query($file, @fields.grep({$_ ne @except.any}), :$suppress-errors, :$no-fatal) !! font-query($file, @fields, :$suppress-errors, :$no-fatal);
 }
 #| Queries all of the font's properties and accepts a Str for the filename instead of an IO::Path
 multi sub font-query-all (Str:D $file, *@except, Bool:D :$suppress-errors = False, Bool:D :$no-fatal = False) is export {
