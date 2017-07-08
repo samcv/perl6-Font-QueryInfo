@@ -55,6 +55,8 @@ Strings return Str, Bool returns Bool's, Int returns Int's, Double's listed abov
 
 If the property is not defined, it will return a type object of the type which would normally be returned.
 
+**Note:** FreeType v2.11.91 or greater is required for the `charset` property.
+
 ### sub font-query-all
 
 ```
