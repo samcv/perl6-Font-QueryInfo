@@ -59,15 +59,22 @@ the font supports.
 If the property is not defined, it will return a type object of the type which
 would normally be returned.
 
+B<Note:> FreeType v2.11.91 or greater is required for the C<charset> property.
+
 =end pod
-state (%data, @fields);
-if !%data or !@fields {
+state (%data, @fields, $fontconfig-version);
+if !%data or !@fields or !$fontconfig-version {
+    my $cmd =  run('fc-query',  '--version', :out, :err);
+    $fontconfig-version = Version.new($cmd.err.slurp(:close)
+    .subst(/^\s*'fontconfig version'\s*/, ''));
+    $cmd.out.close;
     my @rows = $=pod[0].contents[5].contents.join.lines».split(/\s+/, 3);
     for ^@rows {
         %data{@rows[$_][0]} = %( 'type' => @rows[$_][1], 'description' => @rows[$_][2] );
     }
     @fields = %data.keys;
 }
+sub font-query-fc-query-version is export { $fontconfig-version }
 #| Queries all of the font's properties. If supplied properties it will query all properties except for the ones
 #| given.
 multi sub font-query-all (IO::Path:D $file, *@except, Bool:D :$suppress-errors = False, Bool:D :$no-fatal = False) is export {
@@ -159,6 +166,10 @@ sub make-data (Str:D $property, Str $value, IO::Path $file, $warn-routine, Bool:
             }
         }
         when 'CharSet' {
+            if $fontconfig-version < v2.11.91 {
+                error-routine($warn-routine, "fc-query v2.11.91 required for charset", $file);
+                return List;
+            }
             return $value
                 ?? $value.split(' ').map({my @t = .split('-')».parse-base(16); @t > 1 ?? Range.new(@t[0], @t[1]) !! Range.new(@t[0], @t[0]) }).list
                 !! List

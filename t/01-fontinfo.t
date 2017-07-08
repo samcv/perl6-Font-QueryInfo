@@ -52,16 +52,19 @@ verticallayout => Bool, :weight(200), :width(100)}
 my $CI = %*ENV<CI>.Bool;
 my %response = font-query-all($io-path);
 for %hash.keys {
-    is  %response{$_}.^name, %hash{$_}.^name, "$_ returns the same type";
+    is %response{$_}.^name, %hash{$_}.^name, "$_ returns the same type";
     if $_ eq 'file' {
         ok %response{$_}.contains($io-path),
             "file => contains $io-path";
     }
     else {
-        todo "Travis CI is broken for some reason on this test" if $CI and $_ eq 'charset'|'foundry';
+        todo "FontConfig v2.11.91 at least needed for charset"  if $_ eq 'charset' and font-query-fc-query-version() < v2.11.91;
+        todo "Travis CI is broken for some reason on this test" if $_ eq 'foundry' and $CI;
         is-deeply %response{$_}, %hash{$_}, "$_ => eqv";
     }
 }
 is-deeply font-query($io-path, 'name', 'fakeproperty', :no-fatal, :suppress-errors),
-    ${:fakeproperty(Str), :name(Str)}, ":no-fatal and :suppress-errors suppress errors and doesn't die";
+    ${ :fakeproperty(Str), :name(Str) },
+    ":no-fatal and :suppress-errors suppress errors and doesn't die";
+
 done-testing;
